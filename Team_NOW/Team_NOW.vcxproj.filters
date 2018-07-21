@@ -90,6 +90,9 @@
     <ClCompile Include="..\src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\System\Node.cpp">
+      <Filter>src\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SimpleLib\CDirectXGraphics.h">
@@ -163,6 +166,9 @@
     </ClInclude>
     <ClInclude Include="..\src\main.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\System\Node.h">
+      <Filter>src\System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

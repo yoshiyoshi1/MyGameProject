@@ -52,6 +52,7 @@ void Safe_Delete_Array(T p)
 #define RGBA(r,g,b,a) D3DCOLOR_RGBA(r,g,b,a)
 #define COLORVALUE(a,r,g,b) D3DCOLOR_COLORVALUE(r,g,b,a)
 #define ARGB_FULL D3DCOLOR_ARGB(255,255,255,255)
+#define ARGB_D3DX(a,r,g,b) ((D3DXCOLOR)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
 
 // FPSŒv‘ª
 DWORD FpsProc();

@@ -124,3 +124,24 @@ void CMesh::Draw(D3DXMATRIX* matrix)
 	cdg.GetDev()->SetTransform(D3DTS_WORLD, matrix);
 	Draw();
 }
+
+void CMesh::Draw(D3DXMATRIX* matrix,D3DXCOLOR color)
+{
+	cdg.GetDev()->SetTransform(D3DTS_WORLD, matrix);
+	
+	// マテリアルの数ぶんループ
+	for (int i = 0; i < m_MaterialCnt; i++) {
+		m_Materials[i].Diffuse.a = color.a;
+		m_Materials[i].Diffuse.r = color.r;
+		m_Materials[i].Diffuse.g = color.g;
+		m_Materials[i].Diffuse.b = color.b;
+
+		// i番目のマテリアルを設定
+		cdg.GetDev()->SetMaterial(&m_Materials[i]);
+		// i番目のテクスチャを設定
+		cdg.GetDev()->SetTexture(0, m_Textures[i].GetTex());
+
+		// i番目のマテリアルのメッシュを描画
+		m_lpMesh->DrawSubset(i);
+	}
+}
