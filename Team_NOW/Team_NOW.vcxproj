@@ -42,6 +42,7 @@
     <ClCompile Include="..\src\System\KeyInput.cpp" />
     <ClCompile Include="..\src\System\Node.cpp" />
     <ClCompile Include="..\src\System\RouteSearch.cpp" />
+    <ClCompile Include="..\src\System\ThreadGuard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SimpleLib\CDirectXGraphics.h" />
@@ -69,6 +70,7 @@
     <ClInclude Include="..\src\System\KeyInput.h" />
     <ClInclude Include="..\src\System\Node.h" />
     <ClInclude Include="..\src\System\RouteSearch.h" />
+    <ClInclude Include="..\src\System\ThreadGuard.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

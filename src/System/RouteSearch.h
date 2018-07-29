@@ -15,54 +15,94 @@ class RouteSearch
 {
 public:
 	RouteSearch();
-	~RouteSearch(){}
+	~RouteSearch();
 
 	void Update();
 	void Draw();
 
-	void Reset(int x, int y);
-	void SetNode(Node* node,Position pos, int cost, Node* parentNode);
-	int GetDistance(int fromX, int fromY, int toX, int toY);
+	// マップ情報をセットする関数
+	void SetMapData(int* mapData);
 
-	int BackTrace(int x, int y);
-	int Search(int count);
-	
-	void TraceRoute(int x, int y);
-	int out(int(*d)[10]);
-	int _tmain(int argc, char* argv[]);
+	// 開始地点を変更する関数
+	void ChangeStart(int x, int y)
+	{
+		nextStartPos.Set(x, y);
+	}
+	// 開始地点座標（ｘ）を取得する関数
+	int GetStartPosX()
+	{
+		return startPos.x;
+	}
+	// 開始地点座標（ｙ）を取得する関数
+	int GetStartPosY()
+	{
+		return startPos.y;
+	}
+
+	// 目的地を変更する関数
+	void ChangeGoal(int x, int y)
+	{
+		nextGoalPos.Set(x, y);
+	}
+	// 目的地座標（ｘ）を取得する関数
+	int GetGoalPosX()
+	{
+		return goalPos.x;
+	}
+	// 目的地座標（ｙ）を取得する関数
+	int GetGoalPosY()
+	{
+		return goalPos.y;
+	}
 
 private:
 
-	std::map <Position, Node> mapOpen;
-	std::map <Position, Node> mapClose;
+	void Reset(int x, int y);
+	void ResetNodeData();
+	void SetNode(Node* node, Position pos, int score, Node* parentNode);
+	int GetDistance(Position fromPos);
+	int BackTrace(Position pos);
+	bool Search();
 
-	//CVector2 startPos;
-	//CVector2 goalPos;
+private:
+	//std::thread searchThread;
 
+	std::map <int, Node> mapOpen;
+	std::map <int, Node> mapClose;
+
+	//std::vector<Position> parentPos;
+	
 	Position startPos;
 	Position goalPos;
 
+	Position nextStartPos;
+	Position nextGoalPos;
+
 	//-----------------------------
 	// テストデータ
-	static const int SIZE_X = 5;
-	static const int SIZE_Y = 5;
+	static const int SIZE_X = 80;
+	static const int SIZE_Y = 80;
 	
 	int m_RouteData[SIZE_Y][SIZE_X] = {
-		{ 0,1,0,1,0 },
-		{ 0,1,0,1,1 },
-		{ 0,1,0,0,0 },
-		{ 0,1,1,0,1 },
-		{ 0,0,0,0,1 },
+		{ 0,1,0,0,0,0,1,0,0,0 },
+		{ 0,0,0,1,1,0,1,0,0,0 },
+		{ 0,1,0,0,0,0,1,0,0,0 },
+		{ 0,1,1,0,1,0,1,0,0,0 },
+		{ 0,1,0,0,1,0,1,0,0,0 },
+		{ 0,1,0,0,1,0,1,0,0,0 },
+		{ 0,1,1,1,1,0,1,0,0,0 },
+		{ 0,1,0,0,0,0,1,0,0,0 },
+		{ 0,1,1,0,1,0,1,0,0,0 },
+		{ 0,0,0,0,1,0,1,0,0,0 }
 	};
+	Node m_NodeData[SIZE_Y][SIZE_X];
 
 	CMesh m_meshPin;
-	//CMesh m_meshPin[SIZE_Y][SIZE_X];
-	CMatrix m_mPin[SIZE_Y][SIZE_X];
 	//-----------------------------
 };
 
 
-//#define POS(X,Y) Position(X, Y)
-#define KEYDATA(P, N) std::pair<Position, Node>(P, N)
+#define KEY(P) (P.x + P.y * 100)
+#define KEYDATA(P, N) std::pair<int, Node>(KEY(P), N)
 
 #endif

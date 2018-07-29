@@ -1,52 +1,88 @@
 #include "../main.h"
+#include "ThreadGuard.h"
 
 #include "RouteSearch.h"
 
 RouteSearch::RouteSearch()
 {
-	goalPos.Set(2, 4);
+	// 仮データ
+	nextGoalPos.Set(68, 71);
+	nextStartPos.Set(1, 1);
 
 	m_meshPin.LoadXFile("../data/Mesh/TestData/pin.x");
+}
 
-
-	for (int cntY = 0; cntY < SIZE_Y; cntY++) {
-		for (int cntX = 0; cntX < SIZE_X; cntX++) {
-	//		m_meshPin[cntY][cntX].LoadXFile("../data/Mesh/TestData/pin.x");
-			m_mPin[cntY][cntX].CreateMove(cntX * 2.0f, -3.5f+0.5f, cntY * 2.0f);
-			//m_mPin[cntY][cntX].SetPos(2, -2, 0);
-		}
-	}
+RouteSearch::~RouteSearch()
+{
+	// 各リストのデータを削除する
+	mapOpen.clear();
+	mapClose.clear();
+	
+	ResetNodeData();
 }
 
 void RouteSearch::Update()
 {
-	Reset(0, 0);
+	// 開始地点と目的地が変わっていない場合、以降の処理を行わない
+	if (goalPos == nextGoalPos && startPos == nextStartPos)
+		return;
 
-	if (Search(0) == -9) {
+	Reset(nextStartPos.x, nextStartPos.y);
+
+	// nextGoalPos が道ならば、新たな目的地として設定
+	if (m_RouteData[nextGoalPos.y][nextGoalPos.x] == 0) {
+		goalPos = nextGoalPos;
+	}
+	// nextGoalPos が道以外ならば、以降の処理を行わない
+	else {
 		return;
 	}
-	
-	//TraceRoute(goalPos.x, goalPos.y);
 
-	//out(m_RouteData);
-	//return 0;
+
+	// 経路探索を別スレッドで行う
+	std::thread searchThread(&RouteSearch::Search, this);
+	ThreadGuard tg(searchThread);	// エラーで落ちた際に自動でJoinを行う
+	searchThread.join();			// スレッドの終了を待機
+
 }
 
 void RouteSearch::Draw()
 {
-	for (int cntY = 0; cntY < SIZE_Y; cntY++) {
-		for (int cntX = 0; cntX < SIZE_X; cntX++) {
-			D3DXCOLOR color;
-			color = ARGB_D3DX(255, 255, 255, 255);
-			if (m_RouteData[cntY][cntX] == 1)
-				color = ARGB_D3DX(255, 255, 0, 0);
-			else
-				color = ARGB_D3DX(255, 0, 255, 0);
-			m_meshPin.Draw(&m_mPin[cntY][cntX], color);
-		}
+	// 目的地まで探索できているか確認
+	std::map<int, Node>::iterator itClose = mapClose.find(KEY(goalPos));
+	if (itClose == mapClose.end())
+		return;
+
+	for (int i = 0; ; i++) {
+
+		// 経路をピンのメッシュで表示
+		CMatrix m;
+		int blue = (int)(i * (255.0f / (int)mapClose.size()));
+		int red = 255 - blue;
+		m.CreateMove(itClose->second.pos.x * 2.0f, -3.0f, itClose->second.pos.y * 2.0f);
+		m_meshPin.Draw(&m, ARGB_D3DX(255, red, 0, blue));
+
+		// 開始地点の場合、処理を終了する
+		if (itClose->second.pos == startPos)
+			return;
+
+		// イテレータを親のノードで更新
+		itClose = mapClose.find(KEY(itClose->second.parent->pos));
+		if (itClose == mapClose.end())
+			return;
+
 	}
 }
 
+void RouteSearch::SetMapData(int* mapData)
+{
+	int i = 0;
+	for (int cntY = 0; cntY != SIZE_Y; cntY++) {
+		for (int cntX = 0; cntX != SIZE_X; cntX++, i++) {
+			m_RouteData[cntY][cntX] = mapData[i];
+		}
+	}
+}
 
 //=======================================================
 //	リストを初期化してスタート地点をセットする関数
@@ -56,257 +92,228 @@ void RouteSearch::Reset(int x, int y)
 	mapOpen.clear();
 	mapClose.clear();
 	
+	ResetNodeData();
+
 	startPos.Set(x, y);
 
-	Node startNode;
+	Node* pStartNode = &m_NodeData[startPos.y][startPos.x];
 	SetNode(
-		&startNode,
+		pStartNode,
 		startPos,
 		0,
 		nullptr
 	);
-	mapOpen.insert(KEYDATA(startPos, startNode));
+	mapOpen.insert(KEYDATA(startPos, *pStartNode));
+}
+
+//=======================================================
+//	ノードデータをリセットする関数
+//=======================================================
+void RouteSearch::ResetNodeData()
+{
+	for (int cntY = 0; cntY != SIZE_Y; cntY++) {
+		for (int cntX = 0; cntX != SIZE_X; cntX++) {
+			m_NodeData[cntY][cntX].Reset();
+		}
+	}
 }
 
 //=======================================================
 //	ノード情報をセットする関数
 //	@param_out	: node
 //=======================================================
-void RouteSearch::SetNode(Node* node, Position pos, int cost, Node* parentNode)
+void RouteSearch::SetNode(Node* node, Position pos, int score, Node* parentNode)
 {
 	node->pos = pos;
-	node->cost = cost;
+	node->score = score;
 	node->parent = parentNode;
 }
 
 //=======================================================
-// マンハッタン距離を求める
+// 指定した地点からゴールまでの距離を求める（推定）
 //	@return	: 距離
 //=======================================================
-int RouteSearch::GetDistance(int fromX, int fromY, int toX, int toY)
+int RouteSearch::GetDistance(Position fromPos)
 {
-	int x = fromX - toX;
-	int y = fromY - toY;
+	// 絶対値に修正
+	int x = abs(fromPos.x - goalPos.x);
+	int y = abs(fromPos.y - goalPos.y);
 
-	// 補正
-	if (x < 0) x *= -1;
-	if (y < 0) y *= -1;
-
-	// 推定移動コストを計算
+	// 推定移動コストを計算 （斜め）
 	if (x < y) {
 		return (x + (y - x));
 	}
 	else {
 		return (y + (x - y));
 	}
+
 }
 
 //=======================================================
 // 指定した地点からスタート地点までの距離を求める
 //	@return	: 距離
 //=======================================================
-int RouteSearch::BackTrace(int x, int y)
+int RouteSearch::BackTrace(Position pos)
 {
-	if (x == startPos.x && y == startPos.y) {
-		return 1;
+	int res = 0;			// 距離
+	Position tmpPos = pos;	// キーとなる座標
+
+	//------------------------------------------
+	// 親を遡っていき、距離を求める
+	//------------------------------------------
+	while (true) {
+		// 開始地点まで戻った場合、処理を終了する
+		if (tmpPos == startPos) {
+			res++;
+			break;
+		}
+
+		// Closeリストから指定された座標のノードを探す
+		std::map<int, Node>::iterator it = mapClose.find(KEY(tmpPos));
+		if (it == mapClose.end())
+			break;
+		if (it->second.parent == nullptr)
+			break;
+
+		// リストから探してきたノードの親の座標を新たな座標とする
+		tmpPos = it->second.parent->pos;
+		res++;
 	}
 
-	std::map <Position, Node > ::iterator tmp = mapClose.find(Position(x,y));
-
-	if (tmp == mapClose.end()) return 0;
-
-	return BackTrace(tmp->second.pos2.x, tmp->second.pos2.y) + 1;
+	return res;
 }
 
 //=======================================================
-// A*で経路探査する
-//	@return	: 何回サーチしたか	(-1:見つかった	(-9:見つからなかった
+// A*で経路探索する
+//	@return	: 目的地まで探索できたかどうか
 //=======================================================
-int RouteSearch::Search(int count)
+bool RouteSearch::Search()
 {
+	int res = 0;
 
-	// Openリストが空なら終了
-	if (mapOpen.empty()) return -9;
+	while (true) {
 
-	int costMin = 9999;
-	int backCost = 0;
-	
-	Node node;
-	{
-		std::map<Position, Node>::iterator itMin;
-		{
-			//Openリストから最小のコストを持つノードを取り出す
-			std::map<Position, Node>::iterator it = mapOpen.begin();
-			while (it != mapOpen.end()) {
-				if (costMin > GetDistance(it->second.pos.x, it->second.pos.y, goalPos.x, goalPos.y)) {
-					costMin = GetDistance(it->second.pos.x, it->second.pos.y, goalPos.x, goalPos.y);
-					itMin = it;
-				}
-				it++;
-			}
+		// Openリストが空なら探索終了（ゴールまでの道がない状態）
+		if (mapOpen.empty()) {
+			return false;
 		}
 
-		SetNode(
-			&node,
-			itMin->second.pos,
-			itMin->second.cost,
-			nullptr
-		);
-	}
+		Node* pNode;	// 最小のコストを持つノードのポインタ
 
-	// OpenリストからCloseリストへ移動
-	mapClose.insert(KEYDATA(node.pos, node));
-	mapOpen.erase(Position(node.pos.x, node.pos.y));
-
-	// 最小コストのノードからスタートまでの移動コスト
-	backCost = BackTrace(node.pos.x, node.pos.y);
-
-	Node nodes[4];
-
-	int way[4][2] = {
-		{  0, -1 },
-		{  1,  0 },
-		{  0,  1 },
-		{ -1,  0 },
-	};
-
-	for (int i = 0; i < 4; i++) {
-		// 隣接するマスの座標を計算 (４方向)
-		Position tmpPos;
-		tmpPos.x = node.pos.x + way[i][0];
-		tmpPos.y = node.pos.y + way[i][1];
-
-		// 範囲外の場合は処理を行わない
-		if (tmpPos.x < 0) continue;
-		if (tmpPos.y < 0) continue;
-		if (tmpPos.x >= SIZE_X) continue;
-		if (tmpPos.y >= SIZE_Y) continue;
-
-		// 道以外をよける
-		if (m_RouteData[tmpPos.y][tmpPos.x] == 0) continue;
-
-		SetNode(
-			&nodes[i],												
-			tmpPos,													
-			backCost + GetDistance(tmpPos.x, tmpPos.y, goalPos.x, goalPos.y) + 1,	// 推定移動コスト
-			&node													
-		);
-
+		//-----------------------------------------------
+		//Openリストから最小のコストを持つノードを取り出す
+		//-----------------------------------------------
 		{
-			//Openリストに求めた座標と同じノードがあるか確認
-			if (mapOpen.find(tmpPos) != mapOpen.end()) {	// ある場合
+			int costMin = 9999;
+			std::map<int, Node>::iterator itMin;
 
-				// リストでのコストより求めたコストが少ない場合
-				if (nodes[i].cost < mapOpen[tmpPos].cost) {
-					mapOpen[tmpPos].parent = &node;
-					mapOpen[tmpPos].cost = nodes[i].cost;
+			{
+				std::map<int, Node>::iterator it = mapOpen.begin();
+				while (it != mapOpen.end()) {
+					if (costMin > GetDistance(it->second.pos)) {
+						costMin = GetDistance(it->second.pos);
+						itMin = it;
+					}
+					it++;
+				}
+			}
+
+			//m_NodeData[itMin->second.pos.y][itMin->second.pos.x] = itMin->second;
+			pNode = &m_NodeData[itMin->second.pos.y][itMin->second.pos.x];
+
+			// OpenリストからCloseリストへ移動
+			mapClose.insert(KEYDATA(pNode->pos, *pNode));
+			mapOpen.erase(KEY(pNode->pos));
+		}
+
+
+		// 最小コストのノードからスタートまでの移動コスト
+		int backCost = 0;
+		backCost = BackTrace(pNode->pos);
+
+
+		//-----------------------------------------------
+		// 上下左右の４方向を確認
+		//-----------------------------------------------
+		Node* pSubNode;
+		int way[4][2] = {
+			{  0, -1 },		// 下
+			{  1,  0 },		// 左
+			{  0,  1 },		// 上
+			{ -1,  0 },		// 右
+		};
+
+		for (int i = 0; i < 4; i++) {
+			// 隣接するマスの座標を計算 (４方向)
+			Position tmpPos;
+			tmpPos.x = pNode->pos.x + way[i][0];
+			tmpPos.y = pNode->pos.y + way[i][1];
+
+			// 範囲外の場合は処理を行わない
+			if (tmpPos.x < 0) continue;
+			if (tmpPos.y < 0) continue;
+			if (tmpPos.x >= SIZE_X) continue;
+			if (tmpPos.y >= SIZE_Y) continue;
+
+			// 道以外の場合は処理を行わない
+			if (m_RouteData[tmpPos.y][tmpPos.x] != 0) continue;
+
+			pSubNode = &m_NodeData[tmpPos.y][tmpPos.x];
+			SetNode(
+				pSubNode,
+				tmpPos,
+				backCost + GetDistance(tmpPos),	// スコア（スタートまでの距離 + ゴールまでの距離）
+				pNode
+			);
+
+
+			//-----------------------------------------------
+			//Openリストに求めた座標と同じノードがあるか確認
+			//-----------------------------------------------
+			if (mapOpen.find(KEY(tmpPos)) != mapOpen.end()) {	// ある場合
+
+				// Openリストでのスコアより求めたスコアが少ない場合、書き変える
+				if (pSubNode->score < mapOpen[KEY(tmpPos)].score) {
+					mapOpen[KEY(tmpPos)].parent = pNode;
+					mapOpen[KEY(tmpPos)].score = pSubNode->score;
 				}
 				continue;
 			}
 
-			//Closeリストにこの座標と同じノードがあるか確認
-			if (mapClose.find(tmpPos) != mapClose.end()) {
-				if (nodes[i].cost < mapClose[tmpPos].cost) {
-					Node tmp;
 
+			//-----------------------------------------------
+			//Closeリストにこの座標と同じノードがあるか確認
+			//-----------------------------------------------
+			if (mapClose.find(KEY(tmpPos)) != mapClose.end()) {	// ある場合
+
+				// Closeリストでのスコアより求めたスコアが少ない場合、
+				//	新たなノードをOpenリストに追加しCloseリストから除く
+				if (pSubNode->score < mapClose[KEY(tmpPos)].score) {
+					Node tmp;
 					SetNode(
 						&tmp,
 						tmpPos,
-						nodes[i].cost,
-						&node
+						pSubNode->score,
+						pNode
 					);
 
 					mapOpen.insert(KEYDATA(tmpPos, tmp));
-					mapClose.erase(tmpPos);
+					mapClose.erase(KEY(tmpPos));
 				}
 				continue;
 			}
 
 			// 見つからなければ新規としてOpenリストへ追加
-			mapOpen.insert(KEYDATA(nodes[i].pos, nodes[i]));
+			mapOpen.insert(KEYDATA(pSubNode->pos, *pSubNode));
 		}
 
-	}
-
-	//見つかったら探索終了
-	if (node.pos.x == goalPos.x && node.pos.y == goalPos.y) return -1;
-
-	// 見つからなかったらもう一度探索
-	return Search(count + 1);
-}
-
-/*
-// 最短ルートをマップデータに書き出す
-void RouteSearch::TraceRoute(int x, int y)
-{
-	if (x == startPos.x && y == startPos.y) {
-		printf("開始ノード>");
-		return;
-	}
-
-	std::map<Position, Node>::iterator node_it = mapClose.find(Position(x, y));
-
-	if (node_it != mapClose.end()) {
-		m_RouteData[y][x] = 1;
-
-		TraceRoute(node_it->second.pos2.x, node_it->second.pos2.y);
-
-		if (x == goalPos.x && y == goalPos.y) {
-			printf("ゴール\n");
-			return;
+		//-----------------------------------------------
+		//見つかったら探索終了
+		//-----------------------------------------------
+		if (pNode->pos == goalPos) {
+			return true;
 		}
-		else {
-			printf("(%d,%d)>", x, y);
-		}
+
+		// 見つからなかったらもう一度探索
 	}
-
-	return;
 }
-*/
-
-/*
-// マップの情報を綺麗に表示する
-int RouteSearch::out(int(*d)[SIZE_X])
-{
-	for (int h = 0; h < SIZE_Y; h++) {
-		for (int w = 0; w < SIZE_X; w++) {
-			char ch = ' ';
-			if (w == goalPos.x && h == goalPos.y) ch = '*';
-			if (w == startPos.x && h == startPos.y) ch = '@';
-
-			printf("%c", ch);
-
-			if (d[h][w] > 0)  ch = 'o';
-			if (d[h][w] < 0)  ch = '#';
-			if (d[h][w] == 0) ch = '.';
-
-			printf("%c", ch);
-		}
-		printf("\n");
-	}
-	return 0;
-}
-/*
-int RouteSearch::_tmain(int argc, char* argv[])
-{
-	Node start;
-
-	SetNode(
-		&start,
-		startPos.x, startPos.y,
-		-1, -1,
-		0
-	);
-
-	mapOpen.insert(KEYDATA(startPos.x, startPos.y, start));
-
-	if (Search(0) == -1) {
-		printf("見つかった！\n");
-	}
-	TraceRoute(goalPos.x, goalPos.y);
-
-	out(m_RouteData);
-
-	return 0;
-}
-*/

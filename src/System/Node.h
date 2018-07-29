@@ -15,11 +15,32 @@ public:
 		y = _y;
 	}
 
-	bool operator<(const Position &right) const 
+	//-------------------------------------------
+	// オペレータ関連
+	bool operator<(const Position& right) const 
 	{
-		return this->y < right.y; 
+		if (this->y < right.y) {
+			return true;
+		}
+		else if (this->y == right.y) {
+			if (this->x < right.y) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	bool operator==(const Position& value) const
+	{
+		return (this->x == value.x && this->y == value.y);
 	}
 
+	//-------------------------------------------
+	// メンバ関数
 	void Set(int _x, int _y) 
 	{
 		x = _x;
@@ -39,11 +60,18 @@ public:
 class Node
 {
 public:
-	Position pos;
-	Position pos2;
+	// メンバ変数を初期化する関数
+	void Reset() 
+	{
+		pos.Set(0, 0);
+		score = 0;
+		parent = nullptr;
+	}
 
-	int cost;		// 実コスト(スタートからの距離)
-	int heuristic;	// 推定コスト(障害物を無視したゴールまでの距離)
+public:
+	Position pos;
+	int score;		// 実コスト(スタートからの距離)と推定コスト(ゴールまでの距離)の合計値
+	
 	Node* parent;	// 親へのポインタ
 };
 
