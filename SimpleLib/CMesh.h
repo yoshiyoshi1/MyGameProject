@@ -36,6 +36,7 @@ public:
 	//===============================================================================================
 	void Draw();									// ÉÅÉbÉVÉÖï`âÊ
 	void Draw(D3DXMATRIX* matrix);
+	void Draw(D3DXMATRIX* matrix, D3DXCOLOR color);
 
 	// 
 	CMesh();

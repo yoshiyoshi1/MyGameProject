@@ -15,6 +15,8 @@ class map;
 
 class Taxi;
 
+class RouteSearch;
+
 class STitle :public SceneBase 
 {
 public:
@@ -43,6 +45,7 @@ private:
 
 	float r;
 
+	RouteSearch* m_Route;
 };
 
 #endif

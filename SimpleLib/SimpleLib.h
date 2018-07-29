@@ -65,6 +65,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <thread>
 
 //===============================================
 // SimpleLib
