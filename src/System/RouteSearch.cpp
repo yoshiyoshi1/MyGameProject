@@ -41,8 +41,8 @@ void RouteSearch::Update()
 
 	// 経路探索を別スレッドで行う
 	std::thread searchThread(&RouteSearch::Search, this);
-	ThreadGuard tg(searchThread);	// エラーで落ちた際に自動でJoinを行う
-	searchThread.join();			// スレッドの終了を待機
+	ThreadGuard threadGuard(searchThread);	// エラーで落ちた際に自動でJoinを行う
+	searchThread.join();					// スレッドの終了を待機
 
 }
 
