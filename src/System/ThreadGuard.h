@@ -9,17 +9,17 @@
 
 class ThreadGuard {
 public:
-	explicit ThreadGuard(std::thread& t_) : t(t_) {}
+	explicit ThreadGuard(std::thread& _thread) : thread(_thread) {}
 	~ThreadGuard() {
-		if (t.joinable()) {
-			t.join();
+		if (thread.joinable()) {
+			thread.join();
 		}
 	}
 	ThreadGuard(ThreadGuard const&) = delete;
 	ThreadGuard& operator=(ThreadGuard const&) = delete;
 
 private:
-	std::thread& t;
+	std::thread& thread;
 
 };
 

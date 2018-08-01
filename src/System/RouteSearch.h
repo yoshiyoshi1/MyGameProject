@@ -65,13 +65,9 @@ private:
 	bool Search();
 
 private:
-	//std::thread searchThread;
-
 	std::map <int, Node> mapOpen;
 	std::map <int, Node> mapClose;
 
-	//std::vector<Position> parentPos;
-	
 	Position startPos;
 	Position goalPos;
 
@@ -82,23 +78,12 @@ private:
 	// テストデータ
 	static const int SIZE_X = 80;
 	static const int SIZE_Y = 80;
-	
-	int m_RouteData[SIZE_Y][SIZE_X] = {
-		{ 0,1,0,0,0,0,1,0,0,0 },
-		{ 0,0,0,1,1,0,1,0,0,0 },
-		{ 0,1,0,0,0,0,1,0,0,0 },
-		{ 0,1,1,0,1,0,1,0,0,0 },
-		{ 0,1,0,0,1,0,1,0,0,0 },
-		{ 0,1,0,0,1,0,1,0,0,0 },
-		{ 0,1,1,1,1,0,1,0,0,0 },
-		{ 0,1,0,0,0,0,1,0,0,0 },
-		{ 0,1,1,0,1,0,1,0,0,0 },
-		{ 0,0,0,0,1,0,1,0,0,0 }
-	};
+	//-----------------------------
+
+	int m_RouteData[SIZE_Y][SIZE_X];
 	Node m_NodeData[SIZE_Y][SIZE_X];
 
 	CMesh m_meshPin;
-	//-----------------------------
 };
 
 

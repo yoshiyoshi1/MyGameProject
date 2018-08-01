@@ -74,6 +74,8 @@ BOOL CMesh::LoadXFile(LPDIRECT3DDEVICE9 lpD3DDev,const char *lpFileName)
 	// 作業用マテリアル バッファ開放
 	SAFE_RELEASE(pD3DXMtrlBuffer);
 
+	SetPolyNormal();
+
 	return TRUE;
 }
 BOOL CMesh::LoadXFile(const char *lpFileName)
@@ -143,5 +145,53 @@ void CMesh::Draw(D3DXMATRIX* matrix,D3DXCOLOR color)
 
 		// i番目のマテリアルのメッシュを描画
 		m_lpMesh->DrawSubset(i);
+	}
+}
+
+//=====================================================
+// ポリゴンの法線ベクトルを求める関数 
+//=====================================================
+void CMesh::SetPolyNormal()
+{
+	// 使用する情報
+	struct VERTEXDATA
+	{
+		CVector3 pos;		// D3DFVF_XYZ  
+		//CVector3 normal;	// D3DFVF_NORMAL
+		//CVector2 tex;		// D3DFVF_TEX1
+	};
+
+	DWORD polyMax;	// ポリゴン数
+	polyMax = m_lpMesh->GetNumFaces();
+
+	m_NormalVec = new CVector3[polyMax];	// 配列をポリゴン数分確保
+
+	for (DWORD i = 0; i < polyMax; i++) {
+		// ------- 当たったポリゴンの頂点番号を取得する ---------
+		WORD *pIndex;
+		m_lpMesh->LockIndexBuffer(0, (LPVOID*)&pIndex);
+		WORD vertexNo[3];
+		vertexNo[0] = *(pIndex + i * 3 + 0);
+		vertexNo[1] = *(pIndex + i * 3 + 1);
+		vertexNo[2] = *(pIndex + i * 3 + 2);
+		m_lpMesh->UnlockIndexBuffer();
+		pIndex = nullptr;
+
+		// ------- 頂点の座標を取得する ---------
+		VERTEXDATA *pVertex;
+		m_lpMesh->LockVertexBuffer(0, (LPVOID*)&pVertex);
+		CVector3 vPos[3];
+		vPos[0] = (pVertex + vertexNo[0])->pos;
+		vPos[1] = (pVertex + vertexNo[1])->pos;
+		vPos[2] = (pVertex + vertexNo[2])->pos;
+		m_lpMesh->UnlockVertexBuffer();
+		pVertex = nullptr;
+
+		// ------- 頂点からポリゴンの法線方向を取得する ---------
+		CVector3 vec1, vec2;
+		vec1 = vPos[1] - vPos[0];
+		vec2 = vPos[2] - vPos[0];
+		m_NormalVec[i].Cross(&vec1, &vec2);
+		m_NormalVec[i].Normalize();
 	}
 }
