@@ -35,6 +35,7 @@
     <ClCompile Include="..\src\Car\Taxi.cpp" />
     <ClCompile Include="..\src\Car\Truck.cpp" />
     <ClCompile Include="..\src\GameWorld.cpp" />
+    <ClCompile Include="..\src\Human\human.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Map\map.cpp" />
     <ClCompile Include="..\src\Scene\SGame.cpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="..\src\System\Node.cpp" />
     <ClCompile Include="..\src\System\RouteSearch.cpp" />
     <ClCompile Include="..\src\System\ThreadGuard.cpp" />
+    <ClCompile Include="..\src\System\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SimpleLib\CDirectXGraphics.h" />
@@ -62,6 +64,7 @@
     <ClInclude Include="..\src\Car\Taxi.h" />
     <ClInclude Include="..\src\Car\Truck.h" />
     <ClInclude Include="..\src\GameWorld.h" />
+    <ClInclude Include="..\src\Human\human.h" />
     <ClInclude Include="..\src\main.h" />
     <ClInclude Include="..\src\Map\map.h" />
     <ClInclude Include="..\src\Scene\SceneBase.h" />
@@ -71,6 +74,7 @@
     <ClInclude Include="..\src\System\Node.h" />
     <ClInclude Include="..\src\System\RouteSearch.h" />
     <ClInclude Include="..\src\System\ThreadGuard.h" />
+    <ClInclude Include="..\src\System\Timer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

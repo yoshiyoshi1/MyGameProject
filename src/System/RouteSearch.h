@@ -4,6 +4,7 @@
 #include "Node.h"
 
 class Node;
+class Timer;
 
 //*************************************************
 //
@@ -26,68 +27,101 @@ public:
 	// 開始地点を変更する関数
 	void ChangeStart(int x, int y)
 	{
-		nextStartPos.Set(x, y);
+		m_NextStartPos.Set(x, y);
 	}
 	// 開始地点座標（ｘ）を取得する関数
 	int GetStartPosX()
 	{
-		return startPos.x;
+		return m_StartPos.x;
 	}
 	// 開始地点座標（ｙ）を取得する関数
 	int GetStartPosY()
 	{
-		return startPos.y;
+		return m_StartPos.y;
 	}
 
 	// 目的地を変更する関数
 	void ChangeGoal(int x, int y)
 	{
-		nextGoalPos.Set(x, y);
+		m_NextGoalPos.Set(x, y);
 	}
 	// 目的地座標（ｘ）を取得する関数
 	int GetGoalPosX()
 	{
-		return goalPos.x;
+		return m_GoalPos.x;
 	}
 	// 目的地座標（ｙ）を取得する関数
 	int GetGoalPosY()
 	{
-		return goalPos.y;
+		return m_GoalPos.y;
+	}
+
+	// 計測終了時間を取得する関数
+	DWORD GetEndTime()
+	{
+		return m_EndTime;
+	}
+
+	// 探索アルゴリズムを変更する関数
+	void ChangeSearchMode()
+	{
+		if (m_SearchMode == SearchMode::ASTAR) {
+			m_NextSearchMode = SearchMode::DIJKSTRA;
+		}
+		else if (m_SearchMode == SearchMode::DIJKSTRA) {
+			m_NextSearchMode = SearchMode::ASTAR;
+		}
+	}
+	// 現在の探索アルゴリズムを取得する関数
+	int GetSearchMode()
+	{
+		return m_NextSearchMode;
 	}
 
 private:
 
-	void Reset(int x, int y);
+	void Reset(Position pos);
+	bool CheckPos(Position pos);
 	void ResetNodeData();
-	void SetNode(Node* node, Position pos, int score, Node* parentNode);
-	int GetDistance(Position fromPos);
+	int GetCount(int status);
+	float GetDistance(Position pos);
 	int BackTrace(Position pos);
-	bool Search();
+	bool Search_AStar();
+	bool Search_Dijkstra();
+	
+public:
+
+	// 探索アルゴリズム
+	enum SearchMode {
+		ASTAR,		// A*(A-Star)
+		DIJKSTRA	// ダイクストラ法
+	};
 
 private:
-	std::map <int, Node> mapOpen;
-	std::map <int, Node> mapClose;
-
-	Position startPos;
-	Position goalPos;
-
-	Position nextStartPos;
-	Position nextGoalPos;
 
 	//-----------------------------
-	// テストデータ
-	static const int SIZE_X = 80;
-	static const int SIZE_Y = 80;
+	// 時間 計測用
+	DWORD m_EndTime;			// 計測終了時間
+	Timer* m_MeasureTimer;		// 計測用タイマー
+	Timer* m_UpdateTimer;		// 更新のタイミングを測る用
+
 	//-----------------------------
 
-	int m_RouteData[SIZE_Y][SIZE_X];
-	Node m_NodeData[SIZE_Y][SIZE_X];
+	int m_SearchMode;			// どの探索アルゴリズムを使用するか
+	int m_NextSearchMode;		// 次の探索でどのアルゴリズムを使用するか
 
-	CMesh m_meshPin;
+	int** m_RouteData;			// マップの情報
+	Node** m_NodeData;			// ノードの情報
+	Node* m_LastSearchNode;		// 最後に探索したノード
+
+	Position m_StartPos;		// 探索開始地点
+	Position m_GoalPos;			// 探索の目的地
+	Position m_NextStartPos;	// 次にセットする開始地点
+	Position m_NextGoalPos;		// 次にセットする目的地
+	
+	CMesh m_meshPin;			// ルートを表すピンのメッシュ
+	std::thread m_SearchThread;	// 探索用スレッド
+
 };
-
-
-#define KEY(P) (P.x + P.y * 100)
-#define KEYDATA(P, N) std::pair<int, Node>(KEY(P), N)
 
 #endif

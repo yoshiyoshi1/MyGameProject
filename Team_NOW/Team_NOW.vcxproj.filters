@@ -16,11 +16,14 @@
     <Filter Include="src\Car">
       <UniqueIdentifier>{6cafd58a-3956-476f-8c25-5455b619ea3b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\Map">
-      <UniqueIdentifier>{1a685e6a-0202-4443-bdc4-db2030d190c9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\Scene">
       <UniqueIdentifier>{745367ce-f6ea-4734-9a11-ebecda89f102}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Map">
+      <UniqueIdentifier>{594be6fc-1338-4670-9eb3-24f022c1764d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Human">
+      <UniqueIdentifier>{1343d68c-72d0-4dc8-a533-d5921c157a5b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,12 +72,6 @@
     <ClCompile Include="..\src\Car\Truck.cpp">
       <Filter>src\Car</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\Map\map.cpp">
-      <Filter>src\Map</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\Scene\SGame.cpp">
-      <Filter>src\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\System\KeyInput.cpp">
       <Filter>src\System</Filter>
     </ClCompile>
@@ -92,6 +89,18 @@
     </ClCompile>
     <ClCompile Include="..\src\System\ThreadGuard.cpp">
       <Filter>src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\System\Timer.cpp">
+      <Filter>src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Map\map.cpp">
+      <Filter>src\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Human\human.cpp">
+      <Filter>src\Human</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Scene\SGame.cpp">
+      <Filter>src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Scene\STitle.cpp">
       <Filter>src\Scene</Filter>
@@ -146,16 +155,7 @@
     <ClInclude Include="..\src\Car\Truck.h">
       <Filter>src\Car</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\Map\map.h">
-      <Filter>src\Map</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\Scene\SceneBase.h">
-      <Filter>src\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\Scene\SGame.h">
-      <Filter>src\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\Scene\STitle.h">
       <Filter>src\Scene</Filter>
     </ClInclude>
     <ClInclude Include="..\src\System\KeyInput.h">
@@ -175,6 +175,21 @@
     </ClInclude>
     <ClInclude Include="..\src\System\ThreadGuard.h">
       <Filter>src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\System\Timer.h">
+      <Filter>src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Map\map.h">
+      <Filter>src\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Human\human.h">
+      <Filter>src\Human</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Scene\SGame.h">
+      <Filter>src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Scene\STitle.h">
+      <Filter>src\Scene</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

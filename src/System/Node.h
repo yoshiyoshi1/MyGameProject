@@ -17,26 +17,27 @@ public:
 
 	//-------------------------------------------
 	// オペレータ関連
-	bool operator<(const Position& right) const 
-	{
-		if (this->y < right.y) {
-			return true;
-		}
-		else if (this->y == right.y) {
-			if (this->x < right.y) {
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-		else {
-			return false;
-		}
-	}
+
+	// 比較
 	bool operator==(const Position& value) const
 	{
 		return (this->x == value.x && this->y == value.y);
+	}
+	// 加算
+	const Position operator+(const Position& value) const
+	{
+		Position tmp;
+		tmp.x = this->x + value.x;
+		tmp.y = this->y + value.y;
+		return tmp;
+	}
+	// 減算
+	const Position operator-(const Position& value) const
+	{
+		Position tmp;
+		tmp.x = this->x - value.x;
+		tmp.y = this->y - value.y;
+		return tmp;
 	}
 
 	//-------------------------------------------
@@ -63,16 +64,30 @@ public:
 	// メンバ変数を初期化する関数
 	void Reset() 
 	{
-		pos.Set(0, 0);
-		score = 0;
-		parent = nullptr;
+		this->pos.Set(0, 0);
+		this->score = 0;
+		this->status = NONE;
+		this->parent = nullptr;
 	}
 
+	//	ノード情報をセットする関数
+	void SetNode(float score, Node* parentNode)
+	{
+		this->score = score;
+		this->parent = parentNode;
+	}
+
+	enum Status {
+		NONE,
+		OPEN,
+		CLOSE
+	};
+
 public:
-	Position pos;
-	int score;		// 実コスト(スタートからの距離)と推定コスト(ゴールまでの距離)の合計値
-	
-	Node* parent;	// 親へのポインタ
+	Position	pos;
+	float		score;		// 実コスト(スタートからの距離)と推定コスト(ゴールまでの距離)の合計値
+	int			status;		// ノードの状態
+	Node*		parent;		// 親へのポインタ
 };
 
 #endif
